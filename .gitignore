@@ -1,0 +1,7 @@
+# Object files
+build
+aes/dep
+aes/lib
+aes/obj
+.project
+.cproject
