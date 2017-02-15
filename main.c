@@ -211,15 +211,16 @@ void power5v_set(uint8_t flag) {
 		// 5V power on
 		gpio_pin_configure(PWR5VPIN,
 			GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT |
-			GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_CLEAR |
+			GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_SET |
 			GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_NORMAL_DRIVE_STRENGTH
-			);
+		);
 	} else {
 		// 5V power off
 		gpio_pin_configure(PWR5VPIN,
-			GPIO_PIN_CONFIG_OPTION_DIR_INPUT |
-			GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_OFF
-			);
+			GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT |
+			GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_CLEAR |
+			GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_NORMAL_DRIVE_STRENGTH
+		);
 	}
 }
 
@@ -228,15 +229,16 @@ void pump_set(uint8_t flag) {
 		pump = 1;
 		gpio_pin_configure(PUMPPIN,
 			GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT |
-			GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_CLEAR |
+			GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_SET |
 			GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_NORMAL_DRIVE_STRENGTH
-			);
+		);
 	} else {
 		pump = 0;
 		gpio_pin_configure(PUMPPIN,
-			GPIO_PIN_CONFIG_OPTION_DIR_INPUT |
-			GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_OFF
-			);
+			GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT |
+			GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_CLEAR |
+			GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_NORMAL_DRIVE_STRENGTH
+		);
 	}
 }
 
@@ -372,7 +374,7 @@ void main(void) {
 		32767);			// 1s
 #endif
 
-	delay_ms(20);
+	delay_ms(100);
 
 	// main loop
 	while(1) {
@@ -513,7 +515,6 @@ WAITCMD:
 							send_pump(pump, PUMP_PARAMERR);
 							break;
 						}
-						delay_ms(50);
 						ret = hcsr04_read(&value);
 						if (ret != HCSR04_OK) {
 							send_pump(pump, PUMP_HCSR04ERR);
@@ -524,8 +525,8 @@ WAITCMD:
 							break;
 						}
 						rtccnt = message.data.iValue;
-						pump_set(1);
 						rtc2_run();
+						pump_set(1);
 						send_pump(pump, PUMP_OK);
 						break;
 					default:
@@ -630,7 +631,7 @@ VBATLOW:
 		}
 #endif
 
+		delay_s(10);
 	} // main loop
-	delay_s(10);
 
 }

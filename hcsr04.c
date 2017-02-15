@@ -35,7 +35,6 @@ interrupt_isr_t0() {
 }
 
 void  hcsr04_init(void) {
-
 	// TRIG pin configure
 	gpio_pin_configure(TRIGPIN,
 			GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT |
@@ -46,7 +45,7 @@ void  hcsr04_init(void) {
 	// ECHO pin configure
 	gpio_pin_configure(IFPPIN,
 			GPIO_PIN_CONFIG_OPTION_DIR_INPUT |
-			GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_OFF
+			GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_ON_NO_RESISTORS
 			);
 
 	interrupt_control_t0_enable();
@@ -63,7 +62,6 @@ void  hcsr04_init(void) {
 			TIMER0_CONFIG_OPTION_GATE_RUN_TIMER_WHEN_IFP_HIGH,
 			T0MAX
 			);
-
 }
 
 hcsr04_state_t hcsr04_read(uint16_t *range) {
