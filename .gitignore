@@ -3,5 +3,8 @@ build
 aes/dep
 aes/lib
 aes/obj
+tiny-AES128/dep
+tiny-AES128/lib
+tiny-AES128/obj
 .project
 .cproject

@@ -182,15 +182,15 @@ static hcsr04_state_t send_hcsr04(uint16_t *range) {
 	MESSAGE_T message;
 	uint8_t ret;
 
-#if DEBUG
-		printf("range=%d, range low=%d\r\n", *range, config.rangelow);
-#endif
 	message.deviceID = config.deviceID;
 	message.sensorType = HCSR04;
 	message.valueType = DISTANCE;
 	message.address = ADDR_HCSR04;
 
 	ret = hcsr04_read(range);
+#if DEBUG
+	printf("range=%d, range low=%d\r\n", *range, config.rangelow);
+#endif
 	if (ret == HCSR04_OK) {
 		message.msgType = SENSOR_DATA;
 		message.data.iValue = *range;
@@ -225,15 +225,14 @@ void power5v_set(uint8_t flag) {
 }
 
 void pump_set(uint8_t flag) {
+	pump = flag != 0;
 	if (flag) {
-		pump = 1;
 		gpio_pin_configure(PUMPPIN,
 			GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT |
 			GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_SET |
 			GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_NORMAL_DRIVE_STRENGTH
 		);
 	} else {
-		pump = 0;
 		gpio_pin_configure(PUMPPIN,
 			GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT |
 			GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_CLEAR |
@@ -323,6 +322,10 @@ void main(void) {
 	uart_configure_8_n_1_38400();
 #endif
 
+#if DEBUG
+		printf("program start\r\n");
+#endif
+
 	read_config(NVM_START_ADDRESS);
 	ret = CRC8((uint8_t *) &config, sizeof(CONFIG_T)-1);
 	if (config.crcbyte != ret) {
@@ -360,7 +363,6 @@ void main(void) {
 		);
 #endif
 
-	interrupt_control_global_enable();
 	hcsr04_init();
 
 #if EN_RTC
@@ -374,13 +376,19 @@ void main(void) {
 		32767);			// 1s
 #endif
 
-	delay_ms(100);
+	interrupt_control_global_enable();
+
+	delay_ms(20);
 
 	// main loop
 	while(1) {
 
 #if EN_LED
 		gpio_pin_val_complement(LEDPIN);
+#endif
+
+#if DEBUG
+		printf("loop next\r\n");
 #endif
 
 #if EN_ADC
@@ -401,33 +409,16 @@ void main(void) {
 			}
 			goto VBATLOW;
 		}
-
-		if (!pump) {
-			// read & send SOIL1 value
-			if (config.soilen & SOIL1MASK) {
-				send_soil(ADDR_SOIL1);
-			}
-			// read & send SOIL2 value
-			if (config.soilen & SOIL2MASK) {
-				send_soil(ADDR_SOIL2);
-			}
-			// read & send SOIL3 value
-			if (config.soilen & SOIL3MASK) {
-				send_soil(ADDR_SOIL3);
-			}
-		}
 #endif
 
-		if (!pump) {
-			ret = send_hcsr04(&value);
-			send_pump(pump, PUMP_OK);
-		} else {
+		if (pump) {
 			// check PUMP delay counter
 			if (RTC2CON & RTC2CON_ENABLE) {
 				if (rtccnt == 0) {
 					rtc2_stop();
 					pump_set(0);
 					send_pump(pump, PUMP_OK);
+					goto WAITCMD;
 				}
 			}
 			// check range
@@ -607,6 +598,21 @@ WAITCMD:
 
 		if (pump) continue;
 		if (cmd) goto WAITCMD;
+
+		// read & send SOIL1 value
+		if (config.soilen & SOIL1MASK) {
+			send_soil(ADDR_SOIL1);
+		}
+		// read & send SOIL2 value
+		if (config.soilen & SOIL2MASK) {
+			send_soil(ADDR_SOIL2);
+		}
+		// read & send SOIL3 value
+		if (config.soilen & SOIL3MASK) {
+			send_soil(ADDR_SOIL3);
+		}
+		send_hcsr04(&value);
+		send_pump(pump, PUMP_OK);
 
 // battery low force to powersave
 VBATLOW:
